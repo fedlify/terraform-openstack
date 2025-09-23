@@ -1,0 +1,96 @@
+compute_instances:
+  ${instance_key}:
+    name: "${instance_name}"
+    image_name: "${image_name}"
+    flavor_name: "${flavor_name}"
+    key_pair: "${key_pair}"
+    security_groups:
+      - "${security_group}"
+%{ for sg in jsondecode(additional_security_groups_json) }
+      - "${sg}"
+%{ endfor }
+%{ if existing_network_id != "" }
+    networks:
+      - uuid: "${existing_network_id}"
+%{ else }
+    networks:
+      - name: "${network_name}"
+%{ endif }
+%{ if length(jsondecode(attachments_json)) > 0 }
+    attachments:
+%{ for attachment in jsondecode(attachments_json) }
+      - volume_key: "${attachment.volume_key}"
+%{ if lookup(attachment, "device", "") != "" }
+        device: "${attachment.device}"
+%{ endif }
+%{ endfor }
+%{ endif }
+%{ if assign_floating_ip }
+    floating_ip:
+      delete_on_destroy: ${floating_ip_release_on_destroy}
+%{ if floating_network_id != "" }
+      floating_network_id: "${floating_network_id}"
+%{ endif }
+%{ if floating_ip_pool != "" }
+      pool: "${floating_ip_pool}"
+%{ endif }
+%{ endif }
+    metadata:
+      role: "web"
+%{ if root_volume_size > 0 }
+    block_devices:
+      - source_type: "image"
+        destination_type: "volume"
+        uuid: "${image_id}"
+        volume_size: ${root_volume_size}
+        boot_index: 0
+        delete_on_termination: ${root_volume_delete_on_termination}
+%{ endif }
+%{ if format_data_volume }
+    config_drive: true
+    user_data: |
+      #cloud-config
+      fs_setup:
+        - filesystem: ${data_volume_filesystem}
+          device: ${data_volume_device}
+          replace: false
+      mounts:
+        - [${data_volume_device}, ${data_volume_mount_path}, ${data_volume_filesystem}, "defaults", "0", "0"]
+      runcmd:
+        - mkdir -p ${data_volume_mount_path}
+        - chown ubuntu:ubuntu ${data_volume_mount_path}
+
+%{ endif }
+%{ if render_network_manifest && existing_network_id == "" }
+networks:
+  ${network_key}:
+    name: "${network_name}"
+    admin_state_up: true
+subnets:
+  ${subnet_key}:
+    name: "${subnet_name}"
+    network_ref: "${network_key}"
+    cidr: "${subnet_cidr}"
+    gateway_ip: "${gateway_ip}"
+    ip_version: 4
+    enable_dhcp: true
+%{ endif }
+security_groups:
+  ${security_group_key}:
+    name: "${security_group}"
+    description: "Allow ingress HTTP/S"
+    rules:
+      allow_http:
+        direction: ingress
+        ethertype: IPv4
+        protocol: tcp
+        port_range_min: 80
+        port_range_max: 80
+        remote_ip_prefix: 0.0.0.0/0
+      allow_https:
+        direction: ingress
+        ethertype: IPv4
+        protocol: tcp
+        port_range_min: 443
+        port_range_max: 443
+        remote_ip_prefix: 0.0.0.0/0

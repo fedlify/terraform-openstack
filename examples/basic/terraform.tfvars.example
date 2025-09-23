@@ -1,0 +1,36 @@
+# Set this when using an entry from ~/.config/openstack/clouds.yaml
+cloud_name   = ""
+
+# Provide the credentials below only when cloud_name is blank
+auth_url     = "https://identity.example.com/v3"
+domain_name  = "Default"
+project_name = "demo"
+username     = "demo"
+password     = "changeme"
+
+region       = "RegionOne"
+image_name   = "ubuntu-22.04"
+image_id     = ""
+flavor_name  = "m1.small"
+key_pair     = "demo-key"
+additional_security_groups = []
+resource_prefix = "demo"
+subnet_cidr  = "10.10.0.0/24"
+gateway_ip   = "10.10.0.1"
+volume_type         = ""
+root_volume_size    = 40
+root_volume_delete_on_termination = true
+data_volume_size    = 50
+data_volume_device  = "/dev/vdb"
+format_data_volume  = true
+data_volume_filesystem = "ext4"
+data_volume_mount_path = "/mnt/data"
+# Populate both IDs to reuse an existing network/subnet pair
+existing_network_id = ""
+existing_network_name = ""
+existing_subnet_id  = ""
+public_key_path     = "~/.ssh/id_rsa.pub"
+assign_floating_ip  = false
+floating_network_id = ""
+floating_ip_pool    = ""
+floating_ip_release_on_destroy = true
