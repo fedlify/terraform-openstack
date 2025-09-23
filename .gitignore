@@ -1,0 +1,30 @@
+# Terraform
+.terraform/
+.terraform.*
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+terraform.tfvars
+*.auto.tfvars
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Local test artifacts
+.plan
+*.plan
+*.out
+.testsuite
+
+# Go tooling
+.gocache/
+cover.out
+
+# IDE/editor noise
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store

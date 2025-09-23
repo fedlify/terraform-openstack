@@ -26,16 +26,16 @@ output "volume_ids" {
 output "floating_ip_ids" {
   description = "IDs of floating IPs allocated by the module."
   value = {
-    for k, v in local.floating_ip_requests :
-    k => coalesce(lookup(local.floating_ip_resource_ids, k, null), v.id)
+    for k in keys(local.floating_ip_requests) :
+    k => lookup(local.floating_ip_resource_ids, k, null)
   }
 }
 
 output "floating_ip_addresses" {
   description = "Floating IP addresses associated with compute instances."
   value = {
-    for k, v in local.floating_ip_requests :
-    k => coalesce(lookup(local.floating_ip_resource_addresses, k, null), v.address, v.floating_ip)
+    for k in keys(local.floating_ip_requests) :
+    k => lookup(local.floating_ip_resource_addresses, k, null)
   }
 }
 

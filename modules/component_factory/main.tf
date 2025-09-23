@@ -146,7 +146,6 @@ resource "openstack_networking_secgroup_v2" "this" {
   )
   description = try(each.value.description, null)
   region      = try(each.value.region, null)
-  project_id  = try(each.value.project_id, null)
   tenant_id   = try(each.value.tenant_id, null)
 }
 
@@ -160,9 +159,10 @@ resource "openstack_networking_secgroup_rule_v2" "this" {
   port_range_min   = try(each.value.port_range_min, null)
   port_range_max   = try(each.value.port_range_max, null)
   remote_ip_prefix = try(each.value.remote_ip_prefix, null)
-  remote_group_id = try(
-    each.value.remote_group_id,
-    openstack_networking_secgroup_v2.this[each.value.remote_group_ref].id
+  remote_group_id = lookup(
+    each.value,
+    "remote_group_id",
+    contains(keys(each.value), "remote_group_ref") ? openstack_networking_secgroup_v2.this[each.value.remote_group_ref].id : null
   )
   description = try(each.value.description, null)
   region      = try(each.value.region, null)
