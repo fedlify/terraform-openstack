@@ -74,6 +74,7 @@ locals {
       instance_name      = "${var.resource_prefix}-web"
       security_group_key = "web"
       security_group     = "${var.resource_prefix}-web-sg"
+      # network_key stays required – the manifest template references it for map keys even when reusing an existing network
       network_key        = "main"
       subnet_key         = "main"
       attachments_json = jsonencode([
@@ -88,6 +89,7 @@ locals {
       instance_name           = "${var.resource_prefix}-api"
       security_group_key      = "api"
       security_group          = "${var.resource_prefix}-api-sg"
+      # network_key stays required – the manifest template references it for map keys even when reusing an existing network
       network_key             = "main"
       subnet_key              = "main"
       render_network_manifest = false
