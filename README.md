@@ -16,6 +16,7 @@ Composable Terraform tooling for OpenStack that turns declarative manifests into
 ## Repository layout
 - `modules/component_factory` – reusable module that materialises manifests.
 - `examples/basic` – starter configuration showing templated instances, optional floating IPs, and reusing an existing network.
+- `examples/advanced` – multi-instance example driven entirely by `terraform.tfvars`, including per-instance attachments and shared volume definitions.
 - `tests` – Go-based assertions exercising the manifest engine without contacting OpenStack.
 
 ## How the module works
