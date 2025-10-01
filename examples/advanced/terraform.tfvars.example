@@ -1,0 +1,69 @@
+cloud_name      = "MyCloud"
+image_name      = "Ubuntu-24.04-Noble-x64-2024-06"
+flavor_name     = "p8-16gb"
+key_pair        = "yumcoder-key"
+resource_prefix = "fedlify-adv"
+
+additional_security_groups = ["default"]
+
+volume_type                       = ""
+root_volume_size                  = 25
+root_volume_delete_on_termination = true
+format_data_volume                = true
+data_volume_filesystem            = "xfs"
+data_volume_mount_path            = "/mnt/data"
+
+domain_name     = ""
+project_name    = ""
+username        = ""
+password        = ""
+public_key_path = "~/.ssh/..."
+
+existing_network_name = "prod-network"
+assign_floating_ip    = true
+floating_ip_pool      = "Public-Network"
+
+instances = {
+  web = {
+    role = "frontend"
+    metadata = {
+      tier = "presentation"
+    }
+    attachments = [
+      {
+        volume_key = "web_logs"
+        device     = "/dev/vdb"
+      }
+    ]
+  }
+
+  api = {
+    role                    = "backend"
+    render_network_manifest = false
+    metadata = {
+      tier = "services"
+    }
+    attachments = [
+      {
+        volume_key = "api_data"
+      }
+    ]
+  }
+}
+
+volumes = {
+  web_logs = {
+    size        = 100
+    description = "Stores web server logs"
+    metadata = {
+      purpose = "logs"
+    }
+  }
+
+  api_data = {
+    size = 150
+    metadata = {
+      purpose = "application-data"
+    }
+  }
+}
