@@ -70,12 +70,77 @@ locals {
     render_network_manifest           = !local.use_existing_network
     attachments_json                  = jsonencode([])
     metadata_json                     = jsonencode({ role = "default" })
+    block_devices_json                = jsonencode([])
+  }
+
+  instance_root_volume_requests = {
+    for instance_key, instance_cfg in var.instances :
+    instance_key => instance_cfg.root_volume
+    if try(instance_cfg.root_volume, null) != null
+  }
+
+  instance_root_volume_keys = {
+    for instance_key, _ in local.instance_root_volume_requests :
+    instance_key => "root__${instance_key}"
+  }
+
+  manifest_root_volumes = {
+    for instance_key, volume_cfg in local.instance_root_volume_requests :
+    local.instance_root_volume_keys[instance_key] => {
+      size = coalesce(
+        try(volume_cfg.size, null),
+        var.root_volume_size
+      )
+      name = (
+        can(trimspace(volume_cfg.name)) && trimspace(volume_cfg.name) != ""
+      ) ? trimspace(volume_cfg.name) : "${var.resource_prefix}-${instance_key}-root"
+      volume_type = (
+        can(trimspace(volume_cfg.volume_type)) && trimspace(volume_cfg.volume_type) != ""
+      ) ? trimspace(volume_cfg.volume_type) : (var.volume_type != "" ? var.volume_type : null)
+      availability_zone = try(volume_cfg.availability_zone, null)
+      description       = try(volume_cfg.description, null)
+      metadata          = try(volume_cfg.metadata, null)
+      image_id          = local.selected_image_id
+    }
+  }
+
+  instance_block_devices = {
+    for instance_key, instance_cfg in var.instances :
+    instance_key => (
+      lookup(local.instance_root_volume_keys, instance_key, null) != null
+      ? [
+        {
+          source_type      = "volume"
+          destination_type = "volume"
+          volume_key       = lookup(local.instance_root_volume_keys, instance_key, null)
+          boot_index       = 0
+          delete_on_termination = coalesce(
+            try(instance_cfg.root_volume.delete_on_termination, null),
+            var.root_volume_delete_on_termination
+          )
+        }
+      ]
+      : (
+        var.root_volume_size > 0
+        ? [
+          {
+            source_type           = "image"
+            destination_type      = "volume"
+            uuid                  = local.selected_image_id
+            volume_size           = var.root_volume_size
+            boot_index            = 0
+            delete_on_termination = var.root_volume_delete_on_termination
+          }
+        ]
+        : []
+      )
+    )
   }
 
   instance_blueprints = {
     for instance_key, instance_cfg in var.instances :
     instance_key => {
-      instance_key       = instance_key
+      instance_key = instance_key
       instance_name = coalesce(
         try(trimspace(instance_cfg.name), "") != "" ? trimspace(instance_cfg.name) : null,
         "${var.resource_prefix}-${instance_key}"
@@ -124,10 +189,11 @@ locals {
         },
         coalesce(try(instance_cfg.metadata, null), {})
       ))
+      block_devices_json = jsonencode(lookup(local.instance_block_devices, instance_key, []))
     }
   }
 
-  manifest_volumes = {
+  declared_volumes = {
     for volume_key, volume_cfg in var.volumes :
     volume_key => {
       size = volume_cfg.size
@@ -145,6 +211,8 @@ locals {
       source_vol_id     = try(volume_cfg.source_vol_id, null)
     }
   }
+
+  manifest_volumes = merge(local.declared_volumes, local.manifest_root_volumes)
 
   resource_manifests = length(local.manifest_volumes) > 0 ? [
     {

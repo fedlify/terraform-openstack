@@ -189,8 +189,36 @@ resource "openstack_blockstorage_volume_v3" "this" {
   source_vol_id     = try(each.value.source_vol_id, null)
 }
 
+locals {
+  block_device_volume_id_lookup = {
+    for volume_key, volume in openstack_blockstorage_volume_v3.this :
+    volume_key => volume.id
+  }
+
+  compute_instances_enriched = {
+    for instance_key, instance_def in local.compute_instances :
+    instance_key => merge(
+      instance_def,
+      {
+        block_devices = [
+          for block_device in try(instance_def.block_devices, []) :
+          merge(
+            block_device,
+            lookup(block_device, "volume_key", null) != null ? {
+              uuid = coalesce(
+                try(block_device.uuid, null),
+                lookup(local.block_device_volume_id_lookup, block_device.volume_key, null)
+              )
+            } : {}
+          )
+        ]
+      }
+    )
+  }
+}
+
 resource "openstack_compute_instance_v2" "this" {
-  for_each = local.compute_instances
+  for_each = local.compute_instances_enriched
 
   name = try(each.value.name, "") != "" ? each.value.name : (
     local.name_prefix != "" ? format("%s%s", local.name_prefix, each.key) : each.key

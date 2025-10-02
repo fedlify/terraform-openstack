@@ -39,14 +39,23 @@ compute_instances:
 %{ for meta_key, meta_value in jsondecode(metadata_json) }
       ${meta_key}: "${meta_value}"
 %{ endfor }
-%{ if root_volume_size > 0 }
+%{ if length(jsondecode(block_devices_json)) > 0 }
     block_devices:
-      - source_type: "image"
-        destination_type: "volume"
-        uuid: "${image_id}"
-        volume_size: ${root_volume_size}
-        boot_index: 0
-        delete_on_termination: ${root_volume_delete_on_termination}
+%{ for block_device in jsondecode(block_devices_json) }
+      - source_type: "${block_device.source_type}"
+        destination_type: "${block_device.destination_type}"
+%{ if lookup(block_device, "uuid", "") != "" }
+        uuid: "${block_device.uuid}"
+%{ endif }
+%{ if lookup(block_device, "volume_size", null) != null }
+        volume_size: ${block_device.volume_size}
+%{ endif }
+%{ if lookup(block_device, "volume_key", "") != "" }
+        volume_key: "${block_device.volume_key}"
+%{ endif }
+        boot_index: ${lookup(block_device, "boot_index", 0)}
+        delete_on_termination: ${lookup(block_device, "delete_on_termination", true)}
+%{ endfor }
 %{ endif }
 %{ if format_data_volume }
     config_drive: true

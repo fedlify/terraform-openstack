@@ -208,6 +208,15 @@ variable "instances" {
     role                       = optional(string)
     metadata                   = optional(map(string))
     additional_security_groups = optional(list(string))
+    root_volume = optional(object({
+      name                  = optional(string)
+      size                  = optional(number)
+      description           = optional(string)
+      volume_type           = optional(string)
+      availability_zone     = optional(string)
+      metadata              = optional(map(string))
+      delete_on_termination = optional(bool)
+    }))
     attachments = optional(list(object({
       volume_key = string
       device     = optional(string)
@@ -228,6 +237,15 @@ variable "instances" {
       ])
     ])
     error_message = "Instance attachments must reference volume keys declared in the volumes variable."
+  }
+
+  validation {
+    condition = alltrue([
+      for instance in values(var.instances) :
+      try(instance.root_volume, null) == null ||
+      coalesce(try(instance.root_volume.size, null), var.root_volume_size) > 0
+    ])
+    error_message = "Root volume size must be greater than zero when root_volume is specified."
   }
 }
 

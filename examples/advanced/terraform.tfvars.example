@@ -29,6 +29,9 @@ instances = {
     metadata = {
       tier = "presentation"
     }
+    root_volume = {
+      name = "fedlify-adv-web-root"
+    }
     attachments = [
       {
         volume_key = "web_logs"
@@ -42,6 +45,10 @@ instances = {
     render_network_manifest = false
     metadata = {
       tier = "services"
+    }
+    root_volume = {
+      name                  = "fedlify-adv-api-root"
+      delete_on_termination = false
     }
     attachments = [
       {
